@@ -37,7 +37,7 @@ Archived code base corresponding to publication: https://zenodo.org/record/74199
     - The code was tested with the 2017, 2019, and 2022 Community editions.
 2. **Linux only**: Install OpenBLAS libraries
     - `sudo apt-get install libopenblas-base`
-
+3. **MacOs**: As of now this workflow is not supported on Mac computers with Apple Silicon. May work on a Mac with intel processor.
     
 ## Examples
 - Run `example.py` for examples of how to run kinematic analyses
