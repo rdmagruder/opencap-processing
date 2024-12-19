@@ -1775,7 +1775,7 @@ def buildExternalFunction(filename, pathDCAD, CPP_DIR, nInputs,
             cmd_tar = 'tar -xf macOS.tgz -C "{}"'.format(OpenSimAD_DIR)
             os.system(cmd_tar)
             os.remove('macOS.tgz')
-        cmd1 = 'cmake "' + pathBuildExpressionGraph + '" -DTARGET_NAME:STRING="' + filename + '" -DSDK_DIR:PATH="' + OpenSimADOS_DIR + '" -DCPP_DIR:PATH="' + CPP_DIR + '"'
+        cmd1 = 'cmake -DCMAKE_OSX_ARCHITECTURES="x86_64" "' + pathBuildExpressionGraph + '" -DTARGET_NAME:STRING="' + filename + '" -DSDK_DIR:PATH="' + OpenSimADOS_DIR + '" -DCPP_DIR:PATH="' + CPP_DIR + '"'
         cmd2 = "make"
         BIN_DIR = pathBuild
     
