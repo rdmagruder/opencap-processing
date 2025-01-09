@@ -37,7 +37,7 @@ Archived code base corresponding to publication: https://zenodo.org/record/74199
     - The code was tested with the 2017, 2019, and 2022 Community editions.
 2. **Linux only**: Install OpenBLAS libraries
     - `sudo apt-get install libopenblas-base`
-
+3. **MacOs**: As of now this workflow is supported only on x86_64 architecture. If you intend to use this workflow use x86_64 conda environment even on apple silicon (arm64 is not supported yet). 
     
 ## Examples
 - Run `example.py` for examples of how to run kinematic analyses
