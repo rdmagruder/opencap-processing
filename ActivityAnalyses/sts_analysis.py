@@ -399,9 +399,9 @@ class sts_analysis(kinematics):
             knee_l_idx = sts_kinetics.optimal_result["torque_labels"].index("knee_angle_l_moment")
             knee_r_idx = sts_kinetics.optimal_result["torque_labels"].index("knee_angle_r_moment")
 
-            endTime = np.searchsorted(sts_kinetics.time,self.stsEvents['endRisingTime'][i])
-            knee_l_moments = sts_kinetics.optimal_result["torques"][knee_l_idx, :endTime]
-            knee_r_moments = sts_kinetics.optimal_result["torques"][knee_r_idx, :endTime]
+            endTime = np.searchsorted(sts_kinetics.time,self.stsEvents['endRisingTime'][4])
+            knee_l_moments = sts_kinetics.optimal_result["torques"][knee_l_idx, :endTime] * -1 # Invert to match the definition of knee extension
+            knee_r_moments = sts_kinetics.optimal_result["torques"][knee_r_idx, :endTime] * -1 # Invert to match the definition of knee extension
 
             if knee_r_moments.size == 0 or knee_l_moments.size == 0:
                 continue
@@ -418,59 +418,6 @@ class sts_analysis(kinematics):
             return (max_knee_l_moments, max_knee_r_moments), units
         else:
             return (max_knee_l_moment, max_knee_r_moment), units
-
-    # Find the knee extension moment slope during sit-to-stand
-    # NOTE: Uses the first positive knee moment as the start of the slope
-    def compute_knee_extension_moment_slope(self, return_all=False):
-        if self.sts_kinetics is None:
-            raise Exception('No kinetics data available. Run run_dynamic_simulation() first.')
-
-        # Find the knee extension moment slope during sit-to-stand
-        knee_l_moment_slopes = []
-        knee_r_moment_slopes = []
-        for i, sts_kinetics in enumerate(self.sts_kinetics):
-            knee_l_idx = sts_kinetics.optimal_result["torque_labels"].index("knee_angle_l_moment")
-            knee_r_idx = sts_kinetics.optimal_result["torque_labels"].index("knee_angle_r_moment")
-
-            endTime = np.searchsorted(sts_kinetics.time, self.stsEvents['endRisingTime'][i])
-            knee_l_moments = sts_kinetics.optimal_result["torques"][knee_l_idx, :endTime]
-            knee_r_moments = sts_kinetics.optimal_result["torques"][knee_r_idx, :endTime]
-
-            if knee_r_moments.size == 0 or knee_l_moments.size == 0:
-                continue
-
-            # Find the index of the maximum knee moment
-            max_idx_l = np.argmax(knee_l_moments)
-            max_idx_r = np.argmax(knee_r_moments)
-
-            # Left knee: Find first index that is positive
-            start_idx_l = np.where(knee_l_moments[:max_idx_l] >= 0)[0]
-            if start_idx_l.size == 0:
-                start_idx_l = 0
-            else:
-                start_idx_l = start_idx_l[0]
-
-            # Right knee: Find first index that is positive
-            start_idx_r = np.where(knee_r_moments[:max_idx_r] >= 0)[0]
-            if start_idx_r.size == 0:
-                start_idx_r = 0
-            else:
-                start_idx_r = start_idx_r[0]
-
-            # Compute mean differential (average of finite differences)
-            dt = sts_kinetics.time[1] - sts_kinetics.time[0]
-            knee_l_moment_slopes.append(np.mean(np.diff(knee_l_moments[start_idx_l:max_idx_l]) / dt))
-            knee_r_moment_slopes.append(np.mean(np.diff(knee_r_moments[start_idx_r:max_idx_r]) / dt))
-
-        units = 'N*m/s'
-
-        knee_l_moment_slope = np.nanmean(knee_l_moment_slopes) # Excludes trials when no slope is found
-        knee_r_moment_slope = np.nanmean(knee_r_moment_slopes) # Excludes trials when no slope is found
-
-        if return_all:
-            return (knee_l_moment_slopes, knee_r_moment_slopes), units
-        else:
-            return (knee_l_moment_slope, knee_r_moment_slope), units
 
     # Run an inverse dynamics simulation for sit-to-stand
     def run_dynamic_simulation(self, baseDir, dataFolder, session_id, trial_name, case='0', repetition=-1, verbose=False):

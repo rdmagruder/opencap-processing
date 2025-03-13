@@ -57,7 +57,7 @@ repetition = -1 # Select -1 for all repetitions
 scalar_names = {
     'rise_time', 'sts_time', # Commonly reported metrics for sit-to-stand
     'torso_orientation_liftoff', 'torso_angular_velocity', # Kinematics using world frame for body angles
-    'max_knee_extension_moment','knee_extension_moment_slope' # These require inverse dynamics
+    'max_knee_extension_moment' # This requires inverse dynamics
 }
 
 # %% Download trial.
