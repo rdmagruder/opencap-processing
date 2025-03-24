@@ -24,6 +24,9 @@
 
 
 import os
+import sys
+sys.path.append("../")
+sys.path.append("../ActivityAnalyses")
 from ActivityAnalyses.sts_analysis import sts_analysis
 from utils import get_trial_id, download_trial
 import matplotlib.pyplot as plt
