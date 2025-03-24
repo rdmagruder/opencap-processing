@@ -28,6 +28,7 @@ from ActivityAnalyses.sts_analysis import sts_analysis
 from utils import get_trial_id, download_trial
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 
 baseDir = os.path.join(os.getcwd(), '..')
 
@@ -49,15 +50,15 @@ n_sts_cycles = -1
 filter_frequency = 6
 
 # Select whether you want to run inverse dynamics, and select settings.
-run_inverse_dynamics = True
+run_inverse_dynamics = False
 case ='0' # Change this to compare across settings.
 motion_type = 'sit_to_stand'
 repetition = -1 # Select -1 for all repetitions
 
 scalar_names = {
     'rise_time', 'sts_time', # Commonly reported metrics for sit-to-stand
-    'torso_orientation_liftoff', 'torso_angular_velocity', # Kinematics using world frame for body angles
-    'max_knee_extension_moment' # This requires inverse dynamics
+    'torso_orientation', 'torso_angular_velocity', # Torso kinematics PRIOR to liftoff; using world frame
+    'torso_orientation_liftoff', 'torso_angular_velocity_liftoff', # Torso kinematics AT liftoff; using world frame
 }
 
 # %% Download trial.
@@ -112,7 +113,7 @@ plt.show()
 # %% Display scalars of interest.
 stsResults = {'scalars': sts.compute_scalars(scalar_names)}
 print()
-print("STS Results:")
+print("Average STS Results:")
 for key, value in sorted(stsResults['scalars'].items()):
     # Check if the value is a tuple of 2 values (e.g., left and right)
     if isinstance(value['value'], tuple):
@@ -124,4 +125,10 @@ for key, value in sorted(stsResults['scalars'].items()):
         rounded_value = round(value['value'], 2)
         print(f"{key}: {rounded_value} {value['units']}")
 
+print()
+print("STS Results per cycle:")
+stsResults_cycles = sts.compute_scalars(scalar_names, return_all=True)
+for key, values in sorted(stsResults_cycles.items()):
+    rounded_values = [round(value, 4) for value in values['value']]
+    print(f"{key} ({values['units']}): {rounded_values}")
 

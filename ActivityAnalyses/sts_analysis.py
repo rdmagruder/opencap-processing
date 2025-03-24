@@ -17,9 +17,7 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 """
-import sys
 
-sys.path.append('../UtilsDynamicSimulations/OpenSimAD')
 
 import numpy as np
 from scipy import signal
@@ -27,9 +25,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 from utilsKinematics import kinematics
-from UtilsDynamicSimulations.OpenSimAD.utilsOpenSimAD import processInputsOpenSimAD
-from UtilsDynamicSimulations.OpenSimAD.mainOpenSimAD import run_tracking
-from UtilsDynamicSimulations.OpenSimAD.utilsKineticsOpenSimAD import kineticsOpenSimAD
+
 
 class sts_analysis(kinematics):
     def __init__(self, session_dir, trial_name, leg='auto',
@@ -421,6 +417,14 @@ class sts_analysis(kinematics):
 
     # Run an inverse dynamics simulation for sit-to-stand
     def run_dynamic_simulation(self, baseDir, dataFolder, session_id, trial_name, case='0', repetition=-1, verbose=False):
+        # Import Dynamics as necessary
+        import sys
+        sys.path.append('../UtilsDynamicSimulations/OpenSimAD')
+
+        from UtilsDynamicSimulations.OpenSimAD.utilsOpenSimAD import processInputsOpenSimAD
+        from UtilsDynamicSimulations.OpenSimAD.mainOpenSimAD import run_tracking
+        from UtilsDynamicSimulations.OpenSimAD.utilsKineticsOpenSimAD import kineticsOpenSimAD
+
         def plot_kinetics(sts, sts_kinetics_all_cycles, torque_label_l_r, title):
             # Create subplots for pelvis_ty and the two knee moments
             fig, axs = plt.subplots(3, 1, figsize=(8, 10), sharex=True)
