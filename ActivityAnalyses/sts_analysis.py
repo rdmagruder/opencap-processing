@@ -114,7 +114,7 @@ class sts_analysis(kinematics):
         pelvVel = np.diff(pelvSignal, append=0) / dt
 
         # Find peaks in pelvis vertical position (STS max points)
-        idxMaxPelvTy, _ = signal.find_peaks(pelvSignal - np.min(pelvSignal), distance=.9 / dt, height=.2, prominence=.2)
+        idxMaxPelvTy, _ = signal.find_peaks(pelvSignal - np.min(pelvSignal), distance=.9 / dt, height=.12, prominence=.12)
 
         # Initialize storage
         maxIdxOld = 0
