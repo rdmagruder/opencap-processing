@@ -138,8 +138,14 @@ class sts_analysis(kinematics):
 
             startFinishInds.append([startIdx[0], endIdx[0]])
 
+            # Define a temporary seating index for better forward lean detection
+            if i == 0:
+                temp_sit_ind = maxIdxOld
+            else:
+                temp_sit_ind = maxIdxOld + np.argmin(pelvVel[maxIdxOld:startIdx[0]])
+
             # Detect forward lean onset
-            torso_vel_segment = torso_z_vel[int(maxIdxOld):int(startIdx[0])]  # Before lift-off
+            torso_vel_segment = torso_z_vel[int(temp_sit_ind):int(startIdx[0])]  # Before lift-off
             torso_vel_segment = np.flip(torso_vel_segment)  # Reverse for backward search
 
             # Find the first time angular velocity is below the threshold (leaning forward)
@@ -172,13 +178,22 @@ class sts_analysis(kinematics):
 
         # Adjust for periodicity
         startFinishIndsDelayPeriodic = []
-        for val in startFinishIndsDelay:
+        for i, val in enumerate(startFinishIndsDelay):
             pelvVal_up = pelvSignal[val[0]]
             val_down = np.argwhere(pelvSignal[val[1] + 1:] < (pelvVal_up+0.05))[0][0] + val[1] + 1 # 5cm threshold above where the pelvis started rising
-            # Select val_down or val_down-1 based on best match with pelvVal_up.
-            if (np.abs(pelvSignal[val_down] - pelvVal_up) >
-                    np.abs(pelvSignal[val_down - 1] - pelvVal_up)):
-                val_down -= 1
+
+            original_val_down = val_down
+            last_index = startFinishIndsDelay[i+1][1] if i < len(startFinishIndsDelay) - 1 else len(pelvSignal) - 1
+            while val_down < last_index:   # Don't go past end of trial
+                if pelvSignal[val_down] <= pelvVal_up or pelvVel[val_down] >= 0:
+                    break
+                val_down += 1
+
+
+            if val_down >= last_index:
+                val_down = original_val_down
+            else:
+                val_down -=1
             startFinishIndsDelayPeriodic.append([val[0], val_down])
 
         risingSittingTimesDelayedStartPeriodicEnd = [timeVec[i].tolist() for i in startFinishIndsDelayPeriodic]
