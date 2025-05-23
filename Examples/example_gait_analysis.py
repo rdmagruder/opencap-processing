@@ -48,8 +48,9 @@ elif example == 'overground':
     session_id = 'b39b10d1-17c7-4976-b06c-a6aaf33fead2'
     trial_name = 'gait_3'
 
-scalar_names = {'gait_speed','stride_length','step_width','cadence',
-                'single_support_time','double_support_time','step_length_symmetry'}
+scalar_names = ['gait_speed','stride_length','step_width','cadence',
+                'single_support_time','double_support_time','step_length_symmetry',
+                'DMU']
 
 # Select how many gait cycles you'd like to analyze. Select -1 for all gait
 # cycles detected in the trial.
@@ -83,7 +84,7 @@ gaitResults = {}
 gaitResults['scalars_r'] = gait_r.compute_scalars(scalar_names)
 gaitResults['curves_r'] = gait_r.get_coordinates_normalized_time()
 gaitResults['scalars_l'] = gait_l.compute_scalars(scalar_names)
-gaitResults['curves_l'] = gait_l.get_coordinates_normalized_time()    
+gaitResults['curves_l'] = gait_l.get_coordinates_normalized_time()
 
 # %% Print scalar results.
 print('\nRight foot gait metrics:')

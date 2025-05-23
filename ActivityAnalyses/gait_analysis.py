@@ -5,7 +5,7 @@
 
     Copyright 2023 Stanford University and the Authors
     
-    Author(s): Antoine Falisse, Scott Uhlrich
+    Author(s): Antoine Falisse, Scott Uhlrich, RD Magruder
     
     Licensed under the Apache License, Version 2.0 (the "License"); you may not
     use this file except in compliance with the License. You may obtain a copy
@@ -26,6 +26,8 @@ import copy
 import pandas as pd
 from scipy.signal import find_peaks
 from matplotlib import pyplot as plt
+from gaitVAE import utilsVAE
+import torch
 
 from utilsKinematics import kinematics
 
@@ -91,6 +93,8 @@ class gait_analysis(kinematics):
 
         # Rotate marker data with a per gait cycle rotation
         self.markerDictRotatedPerGaitCycle = self.rotate_vector_into_gait_frame()
+
+        self.vae = None
     
     # Compute COM trajectory.
     def comValues(self,rotate=None,filt_freq=-1):
@@ -740,7 +744,75 @@ class gait_analysis(kinematics):
         R_lab_to_gait = np.stack((x.T,y.T,z.T),axis=1).transpose((2, 0, 1))
         
         return R_lab_to_gait
-    
+
+    def compute_DMU(self, return_all=False, version="v02"):
+        # This computes the Mahalanobis distance to the healthy population
+        # It uses a Variational Autoencoder (VAE) to get a low-dimensional
+        # representation of the data, and then computes the distance to the
+        # healthy population in that low-dimensional space (DMU). A distance of ~1
+        # is considered healthy, and a distances ~2 is considered impaired.
+        #
+        # The low-dimensional representation is a 20-dimensional vector, and
+        # each feature may contain relevant information about the severity
+        # and/or nature of impairment for the individual.
+
+        # version="v01" is the model developed in Magruder et al. 2025
+        # version="v02" is the same model, but trained on all datasets (also trained on
+        # parkinson's, myotonic dystrophy, and fascioscapulohumeral dystrophy kinematics)
+
+        df_array = []
+
+        # Get the normalized gait cycles
+        normalized_strides = self.get_coordinates_normalized_time(samples=24)
+
+        for index, df in enumerate(normalized_strides['indiv']):
+            df_copy = df.copy(deep=True)
+            new_col_names = utilsVAE.get_new_col_names(self.gaitEvents['ipsilateralLeg'])
+            # Apply the renaming logic, e.g., with a DataFrame
+            df_copy.rename(columns=new_col_names, inplace=True)
+
+            if self.gaitEvents['ipsilateralLeg'] == 'l':
+                df_copy['pelvis_tz'] = -df_copy['pelvis_tz']
+                df_copy['pelvis_list'] = -df_copy['pelvis_list']
+                df_copy['pelvis_rotation'] = -df_copy['pelvis_rotation']
+                df_copy['lumbar_bending'] = -df_copy['lumbar_bending']
+                df_copy['lumbar_rotation'] = -df_copy['lumbar_rotation']
+
+            for col_name in ['time', 'pelvis_tx', 'pelvis_ty', 'pelvis_tz']:
+                df_copy[col_name] = df_copy[col_name] - df_copy[col_name].iloc[0]  # Subtract the starting value of the pelvis and time
+
+            # Add treadmill-based forward displacement to pelvis_tx
+            hs_start_time = self.gaitEvents['ipsilateralTime'][index, 0]
+            hs_end_time = self.gaitEvents['ipsilateralTime'][index, 2]
+            stride_duration = hs_end_time - hs_start_time  # in seconds
+
+            total_displacement = self.treadmillSpeed * stride_duration  # in meters
+            df_copy['pelvis_tx'] += np.linspace(0, total_displacement, len(df_copy))
+
+            df_copy = df_copy[[col for col in utilsVAE.VAE_COLUMN_ORDER if col in df_copy.columns]]
+
+            # make df_copy into a numpy array of shape (trials, 24, utilsVAE.VAE_COLUMN_ORDER)
+            df_array.append(df_copy.to_numpy())
+
+        # load VAE
+        self.vae = utilsVAE.load_vae(version=version)
+
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        trial_mus = utilsVAE.get_mu_from_df(df_array, self.vae, device, zero_shoulder=False) # zero the shoulder when using a 6 dof shoulder model
+        # trial_mus includes all 20 features for each trial, useful in further analysis
+
+        units = 'deviations'
+
+        DMUs = utilsVAE.calculate_distance_to_healthy(trial_mus, version=version)
+        # DMUs is a single value for each trial, representing whole body impairment
+        # based on the VAE model. It is a measure of how far the trial is from the healthy population.
+        # i.e. the higher the DMU, the more likely the individual is impaired.
+
+        if return_all:
+            return DMUs, units
+        else:
+            return np.mean(DMUs), units
+
     def rotate_vector_into_gait_frame(self,vectorArray=None):
         # vectorArray is a nFramesx3 array
         # This takes a vector array and rotates it into the gait frame, per gait frame. Thus,
@@ -784,15 +856,15 @@ class gait_analysis(kinematics):
         else:
             return leg, contLeg
     
-    def get_coordinates_normalized_time(self):
+    def get_coordinates_normalized_time(self, samples=101):
         
         colNames = self.coordinateValues.columns
         data = self.coordinateValues.to_numpy(copy=True)
         coordValuesNorm = []
         for i in range(self.nGaitCycles):
             coordValues = data[self.gaitEvents['ipsilateralIdx'][i,0]:self.gaitEvents['ipsilateralIdx'][i,2]+1]
-            coordValuesNorm.append(np.stack([np.interp(np.linspace(0,100,101),
-                                   np.linspace(0,100,len(coordValues)),coordValues[:,i]) \
+            coordValuesNorm.append(np.stack([np.interp(np.linspace(0,samples-1,samples),
+                                   np.linspace(0,samples-1,len(coordValues)),coordValues[:,i]) \
                                    for i in range(coordValues.shape[1])],axis=1))
              
         coordinateValuesTimeNormalized = {}

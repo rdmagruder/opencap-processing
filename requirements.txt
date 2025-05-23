@@ -10,3 +10,5 @@ pyyaml
 joblib
 cmake
 seaborn
+pytorch
+scipy
