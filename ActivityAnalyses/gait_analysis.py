@@ -43,7 +43,8 @@ class gait_analysis(kinematics):
         super().__init__(
             session_dir, 
             trial_name, 
-            lowpass_cutoff_frequency_for_coordinate_values=lowpass_cutoff_frequency_for_coordinate_values)
+            lowpass_cutoff_frequency_for_coordinate_values=lowpass_cutoff_frequency_for_coordinate_values,
+            modelName='LaiUhlrich2022_scaled',)
         
         # We might want to trim the start/end of the trial to remove bad data. 
         # For example, this might be needed with HRNet during overground 
@@ -745,7 +746,7 @@ class gait_analysis(kinematics):
         
         return R_lab_to_gait
 
-    def compute_DMU(self, return_all=False, version="v02"):
+    def compute_DMU(self, return_all=False, version="v01"):
         # This computes the Mahalanobis distance to the healthy population
         # It uses a Variational Autoencoder (VAE) to get a low-dimensional
         # representation of the data, and then computes the distance to the

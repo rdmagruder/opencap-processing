@@ -547,4 +547,3 @@ def generate_model_with_contacts(
     model.finalizeConnections
     model.initSystem()
     model.printToXML(pathOutputModel)
-

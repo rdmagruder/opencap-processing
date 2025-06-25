@@ -96,7 +96,7 @@ def get_new_col_names(leg):
 
 
 
-def get_normalized_mahalanobis_distance(patient_mu_value, version="v02"):
+def get_normalized_mahalanobis_distance(patient_mu_value, version="v01"):
     """
     Computes the normalized Mahalanobis distance between a sample and the healthy distribution.
     The normalization is done by squaring the Mahalanobis distance and dividing by latent dimension size,
@@ -112,15 +112,15 @@ def get_normalized_mahalanobis_distance(patient_mu_value, version="v02"):
     normalized_distance = (d ** 2) / healthy_mu_mean.shape[0]
     return normalized_distance
 
-def calculate_distance_to_healthy(trial_mus, version="v02"):
+def calculate_distance_to_healthy(trial_mus, version="v01"):
     return np.array([get_normalized_mahalanobis_distance(mu, version=version) for mu in trial_mus])
 
-def load_vae(version="v02"):
+def load_vae(version="v01"):
     model_path = f"../gaitVAE/{version}/model.pth"
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     input_dim = 24*32
-    hidden_layers = [256, 64]
-    latent_dim = 20
+    hidden_layers = [256, 128]
+    latent_dim = 16
     mean = np.load(f"../gaitVAE/{version}/mean.npy")
     std = np.load(f"../gaitVAE/{version}/std.npy")
     normalize = (mean, std)
@@ -196,11 +196,15 @@ class Decoder(nn.Module):
 
 
 class VariationalAutoEncoder(nn.Module):
-    def __init__(self, input_dim, hidden_layers, z_dims, dropout=0.2, normalize=(0, 1)):
+    def __init__(self, input_dim, hidden_layers, z_dims, dropout=0.2, num_masked=0, timepoint_mask=0, c_gs=1, use_gs_regressor=True, normalize=(0, 1)):
         super(VariationalAutoEncoder, self).__init__()
         self.encoder = Encoder(input_dim, hidden_layers, z_dims, dropout)
         self.decoder = Decoder(z_dims, list(reversed(hidden_layers)), input_dim, dropout)
+        self.num_masked = num_masked
+        self.timepoint_mask = timepoint_mask
+        self.c_gs = c_gs
         self.gait_speed_regressor = nn.Linear(z_dims, 1)
+        self.use_gs_regressor = use_gs_regressor
         self.normalize_mean = normalize[0]
         self.normalize_std = normalize[1]
 
@@ -209,7 +213,7 @@ class VariationalAutoEncoder(nn.Module):
         eps = torch.randn_like(std)
         return mu + eps * std
 
-    def forward(self, x, use_reparam=True):
+    def forward(self, x, use_reparam=False):
 
         # Normalization
         x = (x - self.normalize_mean) / self.normalize_std
@@ -231,6 +235,9 @@ class VariationalAutoEncoder(nn.Module):
         # Gait speed distance
         norm_z_distance = torch.norm(mu, p=2, dim=1) / torch.sqrt(torch.tensor(mu.shape[1], device=mu.device, dtype=mu.dtype))
 
-        pred_gait_speed = self.gait_speed_regressor(mu).squeeze(-1)
+        if self.use_gs_regressor:
+            pred_gait_speed = self.gait_speed_regressor(mu).squeeze(-1)
+        else:
+            pred_gait_speed = self.c_gs / (norm_z_distance + 1e-8)
 
         return x_recon, z, mu, log_var, pred_gait_speed
