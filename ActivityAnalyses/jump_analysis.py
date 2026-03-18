@@ -345,25 +345,17 @@ class jump_analysis(kinematics):
             label="Segment",
         )
 
-        # Bottom.
-        plt.plot(
-            events["bottomTime"],
-            com_y[events["bottomIdx"]],
-            "bo",
-            markersize=7,
-            label="COM bottom",
-        )
-
-        # Flight start / rise start.
-        plt.plot(
-            events["flightStartTime"],
-            com_y[events["flightStartIdx"]],
-            "go",
-            markersize=7,
-            label="Rise start (flight start / bottom on missing-flight)",
-        )
 
         if not events["flightMissing"]:
+            # Bottom.
+            plt.plot(
+                events["bottomTime"],
+                com_y[events["bottomIdx"]],
+                "bo",
+                markersize=7,
+                label="COM bottom",
+            )
+
             fs_idx = events["flightStartIdx"]
             fe_idx = events["flightEndIdx"]
             plt.plot(
@@ -371,14 +363,23 @@ class jump_analysis(kinematics):
                 com_y[fs_idx],
                 "r^",
                 markersize=7,
-                label="Flight start (baseline crossing)",
+                label="Flight start",
             )
             plt.plot(
                 events["flightEndTime"],
                 com_y[fe_idx],
                 "rv",
                 markersize=7,
-                label="Flight end (baseline crossing back)",
+                label="Flight end",
+            )
+        else:
+            # Flight start / rise start.
+            plt.plot(
+                events["flightStartTime"],
+                com_y[events["flightStartIdx"]],
+                "go",
+                markersize=7,
+                label="Rise start",
             )
 
         plt.xlabel("Time [s]")
