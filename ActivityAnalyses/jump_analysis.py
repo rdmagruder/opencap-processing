@@ -40,6 +40,7 @@ class jump_analysis(kinematics):
     - rise_time: time from COM bottom to rise initialization
     - flight_time: time between flightStart and flightEnd; 0 for missing-flight trials
     - jump_height: baseline-adjusted max COM during the flight window (or during the segment for missing-flight)
+    - max_com_vel_rise: signed max COM vertical velocity during the rise window
     """
 
     def __init__(
@@ -416,6 +417,63 @@ class jump_analysis(kinematics):
         """Jump height: baseline-adjusted max COM during flight (or segment for missing-flight)."""
         value = float(self.jumpEvents["jumpHeight"])
         units = "m"
+        if return_all:
+            return [value], units
+        return value, units
+
+    def compute_max_com_vel_rise(self, return_all=False):
+        """Max COM vertical velocity during the rise portion of the jump.
+
+        Window rules:
+        - Successful jumps: from COM bottom (bottomIdx) to flight start (flightStartIdx, inclusive).
+        - No-airtime trials: from rise start (flightStartIdx; set to bottomIdx by segmentation) to
+          the end of the segmented trial (segmentEndIdx, inclusive).
+        """
+        time_vec = self._comValues["time"].to_numpy()
+        com_y_raw = self._comValues["y"].to_numpy()
+
+        # Match the segmentation approach: smooth COM y, then compute and smooth velocity.
+        com_smoothing_cutoff_frequency_hz = 4
+        com_y = lowPassFilter(
+            time_vec,
+            com_y_raw,
+            lowpass_cutoff_frequency=com_smoothing_cutoff_frequency_hz,
+        )
+
+        com_vel_raw = np.gradient(com_y, time_vec)
+        com_vel_smooth = lowPassFilter(
+            time_vec,
+            com_vel_raw,
+            lowpass_cutoff_frequency=min(2.0, com_smoothing_cutoff_frequency_hz),
+        )
+
+        flight_missing = bool(self.jumpEvents["flightMissing"])
+        if not flight_missing:
+            start_idx = int(self.jumpEvents["bottomIdx"])
+            end_idx = int(self.jumpEvents["flightStartIdx"])
+        else:
+            start_idx = int(self.jumpEvents["flightStartIdx"])
+            end_idx = int(self.jumpEvents["segmentEndIdx"])
+
+        if start_idx < 0 or end_idx < 0:
+            raise ValueError(
+                f"Invalid rise window indices: start_idx={start_idx}, end_idx={end_idx}."
+            )
+        if end_idx < start_idx:
+            raise ValueError(
+                f"Invalid rise window: end_idx ({end_idx}) < start_idx ({start_idx})."
+            )
+        if end_idx >= len(com_vel_smooth) or start_idx >= len(com_vel_smooth):
+            raise ValueError(
+                "Rise window indices are out of bounds for COM velocity array."
+            )
+
+        vel_slice = com_vel_smooth[start_idx : end_idx + 1]
+        if vel_slice.size == 0:
+            raise ValueError("Rise velocity slice is empty.")
+
+        value = float(np.max(vel_slice))
+        units = "m/s"
         if return_all:
             return [value], units
         return value, units

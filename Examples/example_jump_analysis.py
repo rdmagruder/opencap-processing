@@ -25,8 +25,10 @@ dataFolder = os.path.join(baseDir, "Data")
 
 # %% User-defined variables.
 # This session/trial pair is used in the existing jump forceplate example.
-session_id = "9eea5bf0-a550-4fa5-bc69-f5f072765848"
+session_id = "4b038322-470b-49ec-98e6-a8d75ff54792"
 trial_name = "jump"
+# trial_name = "jump_hemiparesis" # This simulates left side weakness as an example for lateralized impairments
+# trial_name = "jump_noAir" # An example of segmentation when the participant is incapable of leaving the ground
 
 # Lowpass filter frequency for kinematics data.
 filter_frequency = 6
@@ -34,7 +36,7 @@ filter_frequency = 6
 # Set to True to show the COM segmentation plot.
 visualize_com_plots = True
 
-scalar_names = {"rise_time", "flight_time", "jump_height"}
+scalar_names = {"rise_time", "flight_time", "jump_height", "max_com_vel_rise"}
 
 # %% Run Jump analysis for the selected trial.
 trial_id = get_trial_id(session_id, trial_name)

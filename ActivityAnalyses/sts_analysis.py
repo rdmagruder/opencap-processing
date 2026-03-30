@@ -16,6 +16,10 @@
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
     See the License for the specific language governing permissions and
     limitations under the License.
+
+    If you use this script, in addition to the OpenCap paper, please cite this work:
+    R Daniel Magruder et al., "Smartphone video--based estimates of knee extension moments
+    during chair rise relate to MRI measures of muscle function." Preprint at medRxiv (2026)
 """
 
 

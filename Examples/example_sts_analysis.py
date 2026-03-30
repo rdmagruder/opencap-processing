@@ -20,6 +20,10 @@
     This example shows how to run a kinematic analysis of sit-to-stand data. It also
     includes optional inverse dynamics, and you can compute scalar metrics.
 
+    If you use this script, in addition to the OpenCap paper, please cite this work:
+    R Daniel Magruder et al., "Smartphone video--based estimates of knee extension moments
+    during chair rise relate to MRI measures of muscle function." Preprint at medRxiv (2026)
+
 '''
 
 
@@ -53,7 +57,7 @@ n_sts_cycles = -1
 filter_frequency = 6
 
 # Select whether you want to run inverse dynamics, and select settings.
-run_inverse_dynamics = False
+run_inverse_dynamics = True
 case ='0' # Change this to compare across settings.
 motion_type = 'sit_to_stand'
 repetition = -1 # Select -1 for all repetitions
