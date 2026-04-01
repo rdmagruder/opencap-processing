@@ -492,7 +492,7 @@ class arm_rom_analysis(kinematics):
         plt.axvspan(
             armRomEvents["startTime"],
             armRomEvents["endTime"],
-            alpha=0.15,
+            alpha=0.4,
             color="lightgray",
             label="Segmented trial window",
         )
