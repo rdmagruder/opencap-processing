@@ -338,11 +338,11 @@ class toe_stand_analysis(kinematics):
             raise ValueError("Non-positive segment duration.")
         if self.normalize_by_height:
             h = self._height_m_for_com_normalization()
-            value = (path_3d / h) / duration
-            units = "1/s"
+            value = (path_3d / h) / duration * 100 # converts to cm/s for interpretability`
+            units = "%height/s"
         else:
-            value = path_3d / duration
-            units = "m/s"
+            value = path_3d / duration * 100 # converts to cm/s for interpretability
+            units = "cm/s"
         if return_all:
             return [value], units
         return value, units
@@ -356,11 +356,11 @@ class toe_stand_analysis(kinematics):
             raise ValueError("Non-positive segment duration.")
         if self.normalize_by_height:
             h = self._height_m_for_com_normalization()
-            value = (path_hz / h) / duration
-            units = "1/s"
+            value = (path_hz / h) / duration * 100 # converts to cm/s for interpretability
+            units = "%height/s"
         else:
-            value = path_hz / duration
-            units = "m/s"
+            value = path_hz / duration * 100 # converts to cm/s for interpretability
+            units = "cm/s"
         if return_all:
             return [value], units
         return value, units

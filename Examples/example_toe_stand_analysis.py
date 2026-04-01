@@ -99,6 +99,6 @@ for trial_name in trial_names:
                 f"Right = {right_rounded} {value['units']}"
             )
         else:
-            rounded_value = round(value["value"], 4)
+            rounded_value = round(value["value"], 2)
             print(f"  {key}: {rounded_value} {value['units']}")
     print()
