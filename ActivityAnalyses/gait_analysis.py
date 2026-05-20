@@ -746,7 +746,7 @@ class gait_analysis(kinematics):
         
         return R_lab_to_gait
 
-    def compute_DMU(self, return_all=False, version="v01"):
+    def compute_DMU(self, return_all=False, version="v02"):
         # This computes the Mahalanobis distance to the healthy population
         # It uses a Variational Autoencoder (VAE) to get a low-dimensional
         # representation of the data, and then computes the distance to the
@@ -757,9 +757,10 @@ class gait_analysis(kinematics):
         # each feature may contain relevant information about the severity
         # and/or nature of impairment for the individual.
 
-        # version="v01" is the model developed in Magruder et al. 2025
-        # version="v02" is the same model, but trained on all datasets (also trained on
+        # version="v01" is the model developed in Magruder et al. 2026
+        # version="v02" is the same architecture, but trained on all datasets (also trained on
         # parkinson's, myotonic dystrophy, and fascioscapulohumeral dystrophy kinematics)
+        # v02 is the default and recommended as it is trained on the most diverse dataset
 
         df_array = []
 
