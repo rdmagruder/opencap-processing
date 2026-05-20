@@ -54,7 +54,7 @@ class TRCFile(object):
         # These are lists of each entry on the first few lines.
         first_line = f.readline().split()
         # Skip the 2nd line.
-        # f.readline()
+        f.readline()
         third_line = f.readline().split()
         fourth_line = f.readline().split()
         f.close()
