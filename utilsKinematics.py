@@ -39,6 +39,7 @@ class kinematics:
                  modelName=None,
                  lowpass_cutoff_frequency_for_coordinate_values=-1):
         
+        self.sessionDir = sessionDir
         self.lowpass_cutoff_frequency_for_coordinate_values = (
             lowpass_cutoff_frequency_for_coordinate_values)
         
@@ -443,7 +444,80 @@ class kinematics:
         columns = ['time'] + ['x','y','z']               
         com_accelerations = pd.DataFrame(data=data, columns=columns)
         
-        return com_accelerations 
+        return com_accelerations
+
+    def _get_wbam_normalization_scale(self, body_mass_kg=None, body_height_m=None):
+
+        metadata = None
+        metadata_path = os.path.join(self.sessionDir, 'sessionMetadata.yaml')
+        if os.path.isfile(metadata_path):
+            metadata = utils.import_metadata(metadata_path)
+
+        if body_mass_kg is None:
+            if metadata is not None and 'mass_kg' in metadata:
+                body_mass_kg = float(metadata['mass_kg'])
+            else:
+                body_mass_kg = float(
+                    self.model.getTotalMass(self.stateTrajectory()[0]))
+
+        if body_height_m is None:
+            if metadata is not None and 'height_m' in metadata:
+                body_height_m = float(metadata['height_m'])
+            else:
+                raise ValueError(
+                    "Cannot normalize WBAM without subject height. "
+                    "Add height_m to sessionMetadata.yaml or pass "
+                    "body_height_m=... to get_whole_body_angular_momentum().")
+
+        if body_mass_kg <= 0 or body_height_m <= 0:
+            raise ValueError(
+                "body_mass_kg and body_height_m must be positive for WBAM "
+                "normalization.")
+
+        return body_mass_kg * body_height_m ** 2
+
+    def compute_whole_body_angular_momentum(self, normalize=True,
+                                            body_mass_kg=None,
+                                            body_height_m=None):
+
+        # Angular momentum about the system center of mass, expressed in ground.
+        wbam_raw = np.zeros((self.table.getNumRows(), 3))
+        matter = self.model.getMatterSubsystem()
+        for i in range(self.table.getNumRows()):
+            state = self.stateTrajectory()[i]
+            self.model.realizeVelocity(state)
+            momentum = matter.calcSystemCentralMomentum(state)
+            wbam_raw[i, :] = momentum.get(0).to_numpy()
+
+        if normalize:
+            scale = self._get_wbam_normalization_scale(
+                body_mass_kg=body_mass_kg, body_height_m=body_height_m)
+            self.wbam_values = wbam_raw / scale
+        else:
+            self.wbam_values = wbam_raw
+
+    def get_whole_body_angular_momentum(self, lowpass_cutoff_frequency=-1,
+                                        normalize=True,
+                                        body_mass_kg=None,
+                                        body_height_m=None):
+
+        self.compute_whole_body_angular_momentum(
+            normalize=normalize,
+            body_mass_kg=body_mass_kg,
+            body_height_m=body_height_m)
+        wbam = self.wbam_values
+
+        # Filter.
+        if lowpass_cutoff_frequency > 0:
+            wbam = lowPassFilter(self.time, wbam, lowpass_cutoff_frequency)
+
+        # Return as DataFrame.
+        data = np.concatenate(
+            (np.expand_dims(self.time, axis=1), wbam), axis=1)
+        columns = ['time'] + ['x', 'y', 'z']
+        wbam_values = pd.DataFrame(data=data, columns=columns)
+
+        return wbam_values
 
     def get_body_orientation(self, body_names=None, lowpass_cutoff_frequency=-1,
                            expressed_in='body'):
