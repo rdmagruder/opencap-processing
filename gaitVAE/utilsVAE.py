@@ -167,6 +167,10 @@ def get_mu_from_df(df, model, device, zero_shoulder=False):
         # Zero out the specified joints
         df[:, :, indices_to_zero] = 0
 
+    # Keep input on the same device as the model (prefer model device if they differ).
+    model_device = next(model.parameters()).device
+    if torch.device(device) != model_device:
+        device = model_device
     df = torch.tensor(df, dtype=torch.float32).to(device)
     model.eval()
     with torch.no_grad():
@@ -230,8 +234,16 @@ class VariationalAutoEncoder(nn.Module):
         self.c_gs = c_gs
         self.gait_speed_regressor = nn.Linear(z_dims, 1)
         self.use_gs_regressor = use_gs_regressor
-        self.normalize_mean = normalize[0]
-        self.normalize_std = normalize[1]
+        # Buffers move with .to(device) so normalization stays on the same device as x.
+        # persistent=False: not in the checkpoint (mean/std are loaded from .npy).
+        self.register_buffer(
+            'normalize_mean',
+            torch.as_tensor(normalize[0], dtype=torch.float32),
+            persistent=False)
+        self.register_buffer(
+            'normalize_std',
+            torch.as_tensor(normalize[1], dtype=torch.float32),
+            persistent=False)
 
     def reparameterization(self, mu, log_var):
         std = torch.exp(0.5 * log_var)

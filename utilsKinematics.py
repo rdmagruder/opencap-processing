@@ -5,7 +5,7 @@
 
     Copyright 2022 Stanford University and the Authors
     
-    Author(s): Antoine Falisse, Scott Uhlrich
+    Author(s): Antoine Falisse, Scott Uhlrich, RD Magruder
     
     Licensed under the Apache License, Version 2.0 (the "License"); you may not
     use this file except in compliance with the License. You may obtain a copy
@@ -489,7 +489,7 @@ class kinematics:
             momentum = matter.calcSystemCentralMomentum(state)
             wbam_raw[i, :] = momentum.get(0).to_numpy()
 
-        if normalize:
+        if normalize: # Default is mass * height^2 to be activity agnostic. Often mass * height * gait speed is used for walking.
             scale = self._get_wbam_normalization_scale(
                 body_mass_kg=body_mass_kg, body_height_m=body_height_m)
             self.wbam_values = wbam_raw / scale

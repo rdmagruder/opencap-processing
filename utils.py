@@ -20,7 +20,6 @@
 
 import os
 import requests
-import urllib.request
 import shutil
 import numpy as np
 import pandas as pd
@@ -41,8 +40,12 @@ API_URL = get_api_url()
 API_TOKEN = get_token()
 
 def download_file(url, file_name):
-    with urllib.request.urlopen(url) as response, open(file_name, 'wb') as out_file:
-        shutil.copyfileobj(response, out_file)
+    # Use requests instead of urllib: on some Windows setups, urllib's default
+    # SSL context fails loading the cert store (ssl.SSLError ASN1 NOT_ENOUGH_DATA).
+    response = requests.get(url)
+    response.raise_for_status()
+    with open(file_name, 'wb') as out_file:
+        out_file.write(response.content)
 
 def get_session_json(session_id):
     resp = requests.get(

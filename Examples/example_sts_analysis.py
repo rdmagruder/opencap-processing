@@ -57,7 +57,7 @@ n_sts_cycles = -1
 filter_frequency = 6
 
 # Select whether you want to run inverse dynamics, and select settings.
-run_inverse_dynamics = True
+run_inverse_dynamics = False
 case ='0' # Change this to compare across settings.
 motion_type = 'sit_to_stand'
 repetition = -1 # Select -1 for all repetitions

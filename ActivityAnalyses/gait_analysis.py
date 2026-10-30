@@ -746,18 +746,18 @@ class gait_analysis(kinematics):
         
         return R_lab_to_gait
 
-    def compute_DMU(self, return_all=False, version="v02"):
+    def compute_DMU(self, return_all=False, version="v02", return_mus=False):
         # This computes the Mahalanobis distance to the healthy population
         # It uses a Variational Autoencoder (VAE) to get a low-dimensional
         # representation of the data, and then computes the distance to the
         # healthy population in that low-dimensional space (DMU). A distance of ~1
         # is considered healthy, and a distances ~2 is considered impaired.
         #
-        # The low-dimensional representation is a 20-dimensional vector, and
+        # The low-dimensional representation is a 16-dimensional vector, and
         # each feature may contain relevant information about the severity
         # and/or nature of impairment for the individual.
 
-        # version="v01" is the model developed in Magruder et al. 2026
+        # version="v01" is the model developed and evaluated in Magruder et al. 2026
         # version="v02" is the same architecture, but trained on all datasets (also trained on
         # parkinson's, myotonic dystrophy, and fascioscapulohumeral dystrophy kinematics)
         # v02 is the default and recommended as it is trained on the most diverse dataset
@@ -801,7 +801,7 @@ class gait_analysis(kinematics):
 
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         trial_mus = utilsVAE.get_mu_from_df(df_array, self.vae, device, zero_shoulder=False) # zero the shoulder when using a 6 dof shoulder model
-        # trial_mus includes all 20 features for each trial, useful in further analysis
+        # trial_mus includes all 16 features for each gait cycle, useful in further analysis
 
         units = 'deviations'
 
@@ -811,8 +811,12 @@ class gait_analysis(kinematics):
         # i.e. the higher the DMU, the more likely the individual is impaired.
 
         if return_all:
+            if return_mus:
+                return DMUs, units, trial_mus
             return DMUs, units
         else:
+            if return_mus:
+                return np.mean(DMUs), units, np.mean(trial_mus, axis=0)
             return np.mean(DMUs), units
 
     def rotate_vector_into_gait_frame(self,vectorArray=None):
